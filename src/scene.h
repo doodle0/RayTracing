@@ -24,6 +24,9 @@ public:
   Bitmap Render(const Camera &c, size_t dimX, size_t dimY) const;
 
 private:
+  Color gatherLight(const Ray &initRay) const;
+  std::optional<Ray> collideNearestObject(const Ray &ray) const;
+
   Color sky;
   std::vector<Object *> objects;
   std::vector<LightSource *> lightSources;

@@ -1,7 +1,10 @@
 #include "object.h"
+#include "src/color.h"
+#include <cstdio>
+#include <optional>
 #include <random>
 
-static V3f randomDiffusion(const V3f &surface) {
+static V3f randomUnitVector() {
   // Create a random number generator
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -15,21 +18,39 @@ static V3f randomDiffusion(const V3f &surface) {
   double sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
 
   // Convert spherical coordinates to Cartesian coordinates
-  V3f result(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
-
-  // Return the result or the inversion of it depending on its direction
-  // relative to the surface vector
-  if (result.Dot(surface) < 0)
-    return -result;
-  return result;
+  return V3f(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
 }
 
-Object::Object(const Color &color) : color(color) {}
+static V3f reflection(const V3f &ray, const V3f &surface) {
+  return (ray - 2 * ray.Dot(surface) * surface).Normalized();
+}
 
-Sphere::Sphere(V3f centerPos, float radius, Color color)
-    : Object(color), centerPos(centerPos), radius(radius) {}
+static V3f lambertian(const V3f &surface) {
+  return (surface + randomUnitVector()).Normalized();
+}
 
-Ray Sphere::Collide(const Ray &ray) const {
+Ray Object::makeChildRay(const Ray &ray, const V3f &collisionPointAbs,
+                         const V3f &surface) const {
+  V3f difDir = lambertian(surface);
+  V3f refDir = reflection(ray.direction, surface);
+
+  return Ray(collisionPointAbs, V3f::Interp(difDir, refDir, reflectivity).Normalized(),
+             Color(ray.color * color));
+}
+
+Ray::Ray(const V3f &start, const V3f &direction, const Color &color)
+    : start(start), direction(direction), color(color) {
+  // if (direction.SizeSquared() > 1.001 || direction.SizeSquared() < 0.999)
+  //   printf("%f\n", direction.SizeSquared());
+}
+
+Object::Object(const Color &color, float reflectivity)
+    : color(color), reflectivity(reflectivity) {}
+
+Sphere::Sphere(V3f centerPos, float radius, Color color, float reflectivity)
+    : Object(color, reflectivity), centerPos(centerPos), radius(radius) {}
+
+std::optional<Ray> Sphere::Collide(const Ray &ray) const {
   // my center, relative to ray.start
   V3f centerRel = centerPos - ray.start;
   // the foot of perpendicular from my center and the ray, relative to ray.start
@@ -39,24 +60,35 @@ Ray Sphere::Collide(const Ray &ray) const {
   // half the distance between intersections, squared
   float hd2 = radius * radius - distVec.SizeSquared();
 
-  // return itself if no collision
+  // return null if no collision
   if (hd2 < 0)
-    return ray;
+    return {};
 
-  // the collision point, absolute
-  V3f collisionPoint = ray.start + footRel - sqrt(hd2) * ray.direction;
+  // the point of collision, relative
+  V3f collisionPointRel = footRel - sqrt(hd2) * ray.direction;
 
-  // else diffuse the ray and return
-  return Ray{collisionPoint, randomDiffusion(collisionPoint - centerPos),
-             color};
+  // if the collision point is in the negative direction,
+  // it is also not a collision
+  if (collisionPointRel.Dot(ray.direction) < 0)
+    return {};
+
+  // the point of collision, absolute
+  V3f collisionPointAbs = ray.start + collisionPointRel;
+
+  return makeChildRay(ray, collisionPointAbs, (collisionPointAbs - centerPos).Normalized());
 }
 
-Ground::Ground(const Color &color) : Object(color) {}
+Ground::Ground(const Color &color, float reflectivity) : Object(color, reflectivity) {}
 
-Ray Ground::Collide(const Ray &ray) const {
+std::optional<Ray> Ground::Collide(const Ray &ray) const {
   if (ray.direction.z() < 0) {
-    V3f collisionPoint = V3f(); // temporary
-    return Ray{collisionPoint, randomDiffusion(V3f(0, 0, 1)), color};
+    // extend ray.direction so it touches the ground
+    V3f rayDirExt = (-ray.direction * ray.start.z() / ray.direction.z());
+
+    // then remove z element from the result
+    V3f collisionPointAbs = (ray.start + rayDirExt) * V3f(1, 1, 0);
+
+    return makeChildRay(ray, collisionPointAbs, V3f(0, 0, 1));
   }
-  return ray;
+  return {};
 }
