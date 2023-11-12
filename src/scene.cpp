@@ -1,9 +1,10 @@
 #include "scene.h"
+#include "src/color.h"
 #include <algorithm>
 #include <cmath>
 #include <optional>
 
-Scene::Scene(const Color &sky) : sky(sky) {}
+Scene::Scene(const Color &sky) : ambience(sky) {}
 
 Scene::~Scene() {
   for (auto *o : objects) {
@@ -30,13 +31,33 @@ Bitmap Scene::Render(const Camera &c, size_t dimX, size_t dimY) const {
       // compute the direction of rays of each pixel in viewport
       V3f vpPixelPos = viewDir + (j - (dimX - 1) / 2.0f) / dimX * jBasis +
                        (i - (dimY - 1) / 2.0f) / dimY * iBasis;
-      Ray ray(c.pos + vpPixelPos, vpPixelPos.Normalized(), Color(1, 1, 1));
+      Ray ray(c.pos + vpPixelPos, vpPixelPos.Normalized(), Color(Color(1, 1, 1)));
 
       bmp[i][j] = gatherLight(ray).ToPixel();
     }
   }
 
   return bmp;
+}
+
+Color Scene::gatherLight(const Ray &initRay) const {
+  Color accumulatedLight;
+  int nAccumulations = 10;
+  for (int i = 0; i < nAccumulations; i++) {
+    Ray ray = initRay;
+    for (int j = 0; j < 5; j++) {
+      if (auto res = collideNearestObject(ray)) {
+        ray = *res;
+      }
+    }
+    for (auto *l : lightSources) {
+      if (!l->Collide(ray)) {
+        ray.color = Color(ray.color * ambience);
+      }
+    }
+    accumulatedLight = Color(accumulatedLight + ray.color);
+  }
+  return Color(accumulatedLight / nAccumulations);
 }
 
 std::optional<Ray> Scene::collideNearestObject(const Ray &ray) const {
@@ -52,14 +73,4 @@ std::optional<Ray> Scene::collideNearestObject(const Ray &ray) const {
     }
   }
   return nearestReflection;
-}
-
-Color Scene::gatherLight(const Ray &initRay) const {
-  Ray ray = initRay;
-  for (int i = 0; i < 5; i++) {
-    if (auto res = collideNearestObject(ray)) {
-      ray = *res;
-    }
-  }
-  return ray.color;
 }

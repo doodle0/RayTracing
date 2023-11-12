@@ -34,7 +34,8 @@ Ray Object::makeChildRay(const Ray &ray, const V3f &collisionPointAbs,
   V3f difDir = lambertian(surface);
   V3f refDir = reflection(ray.direction, surface);
 
-  return Ray(collisionPointAbs, V3f::Interp(difDir, refDir, reflectivity).Normalized(),
+  return Ray(collisionPointAbs,
+             V3f::Interp(difDir, refDir, reflectivity).Normalized(),
              Color(ray.color * color));
 }
 
@@ -75,10 +76,12 @@ std::optional<Ray> Sphere::Collide(const Ray &ray) const {
   // the point of collision, absolute
   V3f collisionPointAbs = ray.start + collisionPointRel;
 
-  return makeChildRay(ray, collisionPointAbs, (collisionPointAbs - centerPos).Normalized());
+  return makeChildRay(ray, collisionPointAbs,
+                      (collisionPointAbs - centerPos).Normalized());
 }
 
-Ground::Ground(const Color &color, float reflectivity) : Object(color, reflectivity) {}
+Ground::Ground(const Color &color, float reflectivity)
+    : Object(color, reflectivity) {}
 
 std::optional<Ray> Ground::Collide(const Ray &ray) const {
   if (ray.direction.z() < 0) {
@@ -92,3 +95,6 @@ std::optional<Ray> Ground::Collide(const Ray &ray) const {
   }
   return {};
 }
+
+LightSource::LightSource(V3f centerPos, float radius, Color color)
+    : Sphere(centerPos, radius, color, 0) {}

@@ -11,11 +11,6 @@ struct Ray {
   Color color;
 };
 
-struct LightSource {
-  V3f position;
-  float radius;
-};
-
 class Object {
 public:
   Object(const Color &color, float reflectivity);
@@ -34,7 +29,7 @@ public:
   Sphere(V3f centerPos, float radius, Color color, float reflectivity);
   std::optional<Ray> Collide(const Ray &ray) const override;
 
-private:
+protected:
   V3f centerPos;
   float radius;
 };
@@ -43,6 +38,11 @@ class Ground : public Object {
 public:
   Ground(const Color &color, float reflectivity);
   std::optional<Ray> Collide(const Ray &ray) const override;
+};
+
+struct LightSource : public Sphere {
+public:
+  LightSource(V3f centerPos, float radius, Color color);
 };
 
 #endif // __OBJECT_H__

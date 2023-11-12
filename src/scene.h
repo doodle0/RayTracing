@@ -17,7 +17,7 @@ struct Camera {
 
 class Scene {
 public:
-  Scene(const Color &sky);
+  Scene(const Color &ambience);
   ~Scene();
   void AddObject(Object *obj);
   void AddLightSource(LightSource *lsc);
@@ -27,7 +27,7 @@ private:
   Color gatherLight(const Ray &initRay) const;
   std::optional<Ray> collideNearestObject(const Ray &ray) const;
 
-  Color sky;
+  Color ambience;
   std::vector<Object *> objects;
   std::vector<LightSource *> lightSources;
 };

@@ -16,6 +16,7 @@ public:
   Vec operator-() const;
   Vec operator*(const Vec &o) const; // element-wise product
   Vec operator*(elem_t k) const;
+  Vec operator/(const Vec &o) const; // element-wise division
   Vec operator/(elem_t k) const;
   elem_t Dot(const Vec &o) const;
   elem_t SizeSquared() const;
@@ -89,6 +90,16 @@ Vec<n, elem_t, real_t> Vec<n, elem_t, real_t>::operator*(elem_t k) const {
   Vec<n, elem_t, real_t> result;
   for (int i = 0; i < n; i++) {
     result[i] = elems[i] * k;
+  }
+  return result;
+}
+
+template <size_t n, typename elem_t, typename real_t>
+Vec<n, elem_t, real_t>
+Vec<n, elem_t, real_t>::operator/(const Vec<n, elem_t, real_t> &o) const {
+  Vec<n, elem_t, real_t> result;
+  for (int i = 0; i < n; i++) {
+    result[i] = elems[i] / o[i];
   }
   return result;
 }
