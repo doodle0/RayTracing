@@ -1,4 +1,5 @@
 #include "scene.h"
+#include <cstdio>
 
 Scene::Scene(const Color &sky) : ambience(sky) {}
 
@@ -22,6 +23,8 @@ Bitmap Scene::Render(const Camera &c, size_t dimX, size_t dimY) const {
   V3f jBasis = viewDir.Cross(V3f(0, 0, 1)).Normalized() * c.viewportWidth;
   V3f iBasis = viewDir.Cross(jBasis).Normalized() * c.viewportHeight;
 
+  float steps = 0.01;
+  float progress = 0;
   for (int i = 0; i < dimY; i++) {
     for (int j = 0; j < dimX; j++) {
       // compute the direction of rays of each pixel in viewport
@@ -30,7 +33,12 @@ Bitmap Scene::Render(const Camera &c, size_t dimX, size_t dimY) const {
       Ray ray(c.pos + vpPixelPos, vpPixelPos.Normalized(),
               Color(Color(1, 1, 1)));
 
-      bmp[i][j] = gatherLight(ray, 4, 20).ToPixel();
+      bmp[i][j] = gatherLight(ray, 5, 64).ToPixel();
+    }
+    while ((float)i / dimY > progress) {
+      printf("%2.0f%%\n", progress * 100);
+      fflush(stdout);
+      progress += steps;
     }
   }
 
@@ -44,6 +52,7 @@ Color Scene::gatherLight(const Ray &ray, int depth, int nChilds) const {
   auto [colResult, colObj] = collideNearestObject(ray);
   if (!colResult) {
     // check if the ray collides with a light source
+    // for now, we don't consider obstruction by another object
     for (auto *l : lightSources) {
       if (l->Collide(ray)) {
         return Color(ray.color * l->GetColor());
@@ -56,7 +65,7 @@ Color Scene::gatherLight(const Ray &ray, int depth, int nChilds) const {
   auto refl = colObj->GetReflector();
 
   // how many child rays to generate for accumulating light
-  int nAccumulations = nChilds;
+  int nAccumulations = std::max(1, nChilds);
 
   // if the collided material has a perfect reflector,
   // make only one child ray
