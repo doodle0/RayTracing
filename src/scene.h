@@ -3,9 +3,11 @@
 
 #include "bitmap.h"
 #include "object.h"
+#include "tracing.h"
 #include "vector.h"
 
 #include <stddef.h>
+#include <utility>
 #include <vector>
 
 struct Camera {
@@ -14,6 +16,8 @@ struct Camera {
   float viewportDist;
   float viewportWidth, viewportHeight;
 };
+
+using CollisionTestResult = std::pair<CollisionResult, const Object*>;
 
 class Scene {
 public:
@@ -24,8 +28,9 @@ public:
   Bitmap Render(const Camera &c, size_t dimX, size_t dimY) const;
 
 private:
-  Color gatherLight(const Ray &initRay) const;
-  std::optional<Ray> collideNearestObject(const Ray &ray) const;
+
+  Color gatherLight(const Ray &ray, int depth, int nChilds) const;
+  CollisionTestResult collideNearestObject(const Ray &ray) const;
 
   Color ambience;
   std::vector<Object *> objects;

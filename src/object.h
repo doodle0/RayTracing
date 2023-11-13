@@ -2,32 +2,26 @@
 #define __OBJECT_H__
 
 #include "color.h"
+#include "tracing.h"
 #include "vector.h"
 
-struct Ray {
-  Ray(const V3f &start, const V3f &direction, const Color &color);
-  V3f start;
-  V3f direction;
-  Color color;
-};
+class Object;
 
 class Object {
 public:
   Object(const Color &color, float reflectivity);
-  virtual ~Object() = default;
-  virtual std::optional<Ray> Collide(const Ray &ray) const = 0;
+  virtual ~Object();
+  const Reflector *GetReflector() const;
+  virtual CollisionResult Collide(const Ray &ray) const = 0;
 
 protected:
-  Ray makeChildRay(const Ray &ray, const V3f &collisionPointAbs,
-                   const V3f &surface) const;
-  Color color;
-  float reflectivity;
+  Reflector *reflector;
 };
 
 class Sphere : public Object {
 public:
   Sphere(V3f centerPos, float radius, Color color, float reflectivity);
-  std::optional<Ray> Collide(const Ray &ray) const override;
+  CollisionResult Collide(const Ray &ray) const override;
 
 protected:
   V3f centerPos;
@@ -37,12 +31,16 @@ protected:
 class Ground : public Object {
 public:
   Ground(const Color &color, float reflectivity);
-  std::optional<Ray> Collide(const Ray &ray) const override;
+  CollisionResult Collide(const Ray &ray) const override;
 };
 
 struct LightSource : public Sphere {
 public:
   LightSource(V3f centerPos, float radius, Color color);
+  const Color &GetColor() const;
+
+protected:
+  Color color;
 };
 
 #endif // __OBJECT_H__

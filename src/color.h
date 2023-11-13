@@ -12,6 +12,9 @@ struct Color : V3f {
   const float &r() const;
   const float &g() const;
   const float &b() const;
+  float &r();
+  float &g();
+  float &b();
   Pixel ToPixel();
 };
 

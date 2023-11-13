@@ -7,6 +7,9 @@ Color::Color(float r, float g, float b) : V3f(r, g, b) {}
 const float &Color::r() const { return elems[0]; }
 const float &Color::g() const { return elems[1]; }
 const float &Color::b() const { return elems[2]; }
+float &Color::r() { return elems[0]; }
+float &Color::g() { return elems[1]; }
+float &Color::b() { return elems[2]; }
 
 Pixel Color::ToPixel() {
   return Pixel(std::clamp<int>(256 * r(), 0, 255),

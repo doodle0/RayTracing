@@ -24,7 +24,7 @@ public:
   static Vec Interp(const Vec &a, const Vec &b, real_t k);
 
 protected:
-  elem_t elems[n];
+  elem_t elems[n] = {0};
 };
 
 template <size_t n, typename elem_t, typename real_t, typename Vec>

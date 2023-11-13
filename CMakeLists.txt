@@ -27,11 +27,13 @@ add_library(raytracing
     src/vector.h
     src/object.h
     src/scene.h
+    src/tracing.h
     src/bitmap.cpp
     src/color.cpp
     src/vector.cpp
     src/object.cpp
     src/scene.cpp
+    src/tracing.cpp
 )
 
 # Link the fpng library to raytracing
